@@ -21,26 +21,15 @@ The first scanned page downloads the English OCR models into a Docker volume on 
 
 ## Fox
 
-The image is built for Linux CPU. GitHub Actions does not build it. A push to `main` copies the source to Fox over SSH and runs `docker compose up -d --build` there.
+The image is built for Linux CPU. A push to `main` hits a webhook on Fox, which runs `git pull` and `docker compose up -d --build`. Tailscale Funnel publishes that webhook at `https://fox.tailcc00e1.ts.net/mediko-deploy`. The dashboard itself stays on port `8501` and is not on the public Funnel URL.
 
-One-time setup on Fox:
+The root of `https://fox.tailcc00e1.ts.net` already belongs to another service. The MediKo hook is only the `/mediko-deploy` path.
 
-1. Install Docker Engine and the Docker Compose plugin.
-2. Add the deploy user to the `docker` group.
-3. Put an SSH public key for that user in `authorized_keys`.
+Rebuild log on Fox:
 
-GitHub repository secrets for `aibelbin/MediKo`:
-
-| Secret | Required | Purpose |
-| --- | --- | --- |
-| `FOX_HOST` | yes | Hostname or IP of Fox |
-| `FOX_USER` | yes | SSH user that can run Docker |
-| `FOX_SSH_KEY` | yes | Private key matching that user's `authorized_keys` entry |
-| `FOX_PORT` | no | SSH port, default `22` |
-| `FOX_DEPLOY_PATH` | no | Directory on Fox, relative to the user's home, default `mediko`. An absolute path also works. |
-| `FOX_KNOWN_HOSTS` | no | Pinned `known_hosts` line for Fox. When unset, the runner accepts the host key on first connect. |
-
-After those secrets exist, a push to `main` deploys. You can also run the **Deploy to Fox** workflow by hand.
+```bash
+tail -f ~/.local/share/mediko/deploy.log
+```
 
 The app listens on port `8501` on Fox. The first image build is large because it installs PaddlePaddle and PaddleOCR. The first scanned document then downloads model weights.
 

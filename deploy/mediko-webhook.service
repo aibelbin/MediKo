@@ -1,0 +1,20 @@
+[Unit]
+Description=MediKo GitHub deploy webhook
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=aibel
+Group=aibel
+SupplementaryGroups=docker
+WorkingDirectory=/home/aibel/mediko
+Environment=MEDIKO_WEBHOOK_SECRET_FILE=/home/aibel/.config/mediko/webhook.secret
+Environment=MEDIKO_REPO_DIR=/home/aibel/mediko
+Environment=MEDIKO_REBUILD_SCRIPT=/home/aibel/.local/lib/mediko/rebuild.sh
+Environment=MEDIKO_DEPLOY_LOG=/home/aibel/.local/share/mediko/deploy.log
+ExecStart=/usr/bin/python3 /home/aibel/.local/lib/mediko/webhook_server.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
