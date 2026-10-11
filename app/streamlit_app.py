@@ -47,6 +47,7 @@ def _show_result(result: dict) -> None:
         st.info("PaddleOCR did not run. Embedded or plain text was enough for every page.")
 
     st.text_area("Extracted text", result["text"], height=280)
+    _show_normalization(result)
 
     for page in result["pages"]:
         with st.expander(_page_label(page), expanded=len(result["pages"]) == 1):
@@ -68,6 +69,8 @@ def _show_result(result: dict) -> None:
 
     st.subheader("Later pipeline stages")
     for name, component in result["components"].items():
+        if name == "normalization":
+            continue
         st.write(f"{name}: {component['status']}. {component['detail']}")
 
     st.download_button(
@@ -76,6 +79,38 @@ def _show_result(result: dict) -> None:
         file_name="mediko-result.json",
         mime="application/json",
     )
+
+
+def _show_normalization(result: dict) -> None:
+    component = result["components"]["normalization"]
+    if component["status"] != "applied":
+        st.info(f"Normalization: {component['status']}. {component['detail']}")
+        return
+    st.text_area("Normalized text", result["normalized_text"], height=280)
+    edits = [
+        edit
+        for page in result["pages"]
+        for edit in page.get("transformations", [])
+    ]
+    st.caption(
+        f"Normalization made {len(edits)} change(s). "
+        "Clinical abbreviations were left unchanged."
+    )
+    if edits:
+        with st.expander("Normalization changes"):
+            st.dataframe(
+                [
+                    {
+                        "page": edit["page_index"] + 1,
+                        "rule": edit["rule"],
+                        "original": edit["original"],
+                        "replacement": edit["replacement"],
+                    }
+                    for edit in edits
+                ],
+                hide_index=True,
+                use_container_width=True,
+            )
 
 
 def _page_label(page: dict) -> str:

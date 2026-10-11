@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-SCHEMA_VERSION = "0.1.0"
+from mediko.normalization import NORMALIZATION_DETAIL
+
+SCHEMA_VERSION = "0.2.0"
 
 RESEARCH_NOTICE = (
     "This tool extracts information documented in the report. "
@@ -12,14 +14,23 @@ RESEARCH_NOTICE = (
 )
 
 _UNAVAILABLE_DETAIL = "Not implemented in this boilerplate."
-_UNAVAILABLE_STAGES = ("normalization", "ner", "negation", "relations", "temporal")
+_UNAVAILABLE_STAGES = ("ner", "negation", "relations", "temporal")
 
 
 def unavailable_components() -> dict[str, dict[str, str]]:
-    return {
-        name: {"status": "unavailable", "detail": _UNAVAILABLE_DETAIL}
-        for name in _UNAVAILABLE_STAGES
+    components = {
+        "normalization": {
+            "status": "unavailable",
+            "detail": _UNAVAILABLE_DETAIL,
+        }
     }
+    components.update(
+        {
+            name: {"status": "unavailable", "detail": _UNAVAILABLE_DETAIL}
+            for name in _UNAVAILABLE_STAGES
+        }
+    )
+    return components
 
 
 def assemble_document(
@@ -33,6 +44,10 @@ def assemble_document(
 ) -> dict[str, Any]:
     """Build the public JSON document from pages that were actually extracted."""
     text = "\n\n".join(page["text"] for page in pages)
+    normalized_values = [page.get("normalized_text") for page in pages]
+    normalization_applied = bool(pages) and all(
+        value is not None for value in normalized_values
+    )
     ocr_page_indexes = [
         page["page_index"] for page in pages if page["text_source"] == "ocr"
     ]
@@ -43,7 +58,7 @@ def assemble_document(
     ]
     metadata: dict[str, Any] = {
         "ocr_used": ocr_used,
-        "normalization_applied": False,
+        "normalization_applied": normalization_applied,
         "model_version": model_version if ocr_used else None,
         "ocr_device": ocr_device if ocr_used else None,
         "ocr_page_indexes": ocr_page_indexes,
@@ -55,7 +70,8 @@ def assemble_document(
             "Per-line model_confidence values are PaddleOCR recognition scores, "
             "not calibrated probabilities of clinical correctness."
         )
-    return {
+    components = unavailable_components()
+    document: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "document_id": document_id,
         "source_filename": source_filename,
@@ -65,6 +81,13 @@ def assemble_document(
         "entities": [],
         "relations": [],
         "timeline": [],
-        "components": unavailable_components(),
+        "components": components,
         "processing_metadata": metadata,
     }
+    if normalization_applied:
+        components["normalization"] = {
+            "status": "applied",
+            "detail": NORMALIZATION_DETAIL,
+        }
+        document["normalized_text"] = "\n\n".join(normalized_values)
+    return document

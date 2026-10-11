@@ -11,7 +11,8 @@ The full research plan is in `medical_report_intelligence_spec.md`.
 1. Accept a PDF or UTF-8 TXT file up to 20 MB.
 2. Read embedded text from each PDF page.
 3. When a page has fewer than 40 stripped characters, rasterize it at 200 DPI and run PaddleOCR 3.x.
-4. Return a versioned JSON document (`schema_version` `0.1.0`) and show it in Streamlit.
+4. Normalize whitespace, line breaks, ligatures, and safe line-break hyphenation. The original extracted text is kept, and clinical abbreviations are left unchanged.
+5. Return a versioned JSON document (`schema_version` `0.2.0`) and show it in Streamlit.
 
 OCR line scores are PaddleOCR recognition scores. They are labeled `model_confidence` and are not calibrated clinical probabilities.
 
