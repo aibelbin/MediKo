@@ -1,0 +1,19 @@
+services:
+  mediko:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mediko:local
+    container_name: mediko
+    ports:
+      - "8501:8501"
+    environment:
+      MEDIKO_OCR_DEVICE: cpu
+      MEDIKO_CONFIG: /app/config/default.yaml
+    volumes:
+      - paddlex-cache:/home/mediko/.paddlex
+    shm_size: "1gb"
+    restart: unless-stopped
+
+volumes:
+  paddlex-cache:

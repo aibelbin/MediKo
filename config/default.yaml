@@ -1,0 +1,15 @@
+input:
+  # Reject uploads larger than this before extraction starts.
+  max_upload_bytes: 20971520
+  # A PDF page with fewer stripped characters than this is treated as
+  # scanned or otherwise lacking embedded text, and is sent to PaddleOCR.
+  min_embedded_chars: 40
+
+ocr:
+  # PaddleOCR language code. English medical reports use "en".
+  lang: en
+  # "cpu" matches the image in this repository. A GPU image would use "gpu:0".
+  device: cpu
+  # Rasterization resolution for pages that need OCR. 200 DPI is a starting
+  # point for report scans; it is configuration, not a tuned result.
+  render_dpi: 200

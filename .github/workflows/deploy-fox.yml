@@ -1,0 +1,32 @@
+name: Deploy to Fox
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: fox-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Sync and build on Fox
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Copy source to Fox and build the container there
+        env:
+          FOX_HOST: ${{ secrets.FOX_HOST }}
+          FOX_USER: ${{ secrets.FOX_USER }}
+          FOX_SSH_KEY: ${{ secrets.FOX_SSH_KEY }}
+          FOX_PORT: ${{ secrets.FOX_PORT }}
+          FOX_DEPLOY_PATH: ${{ secrets.FOX_DEPLOY_PATH }}
+          FOX_KNOWN_HOSTS: ${{ secrets.FOX_KNOWN_HOSTS }}
+        run: bash deploy/sync-and-build.sh
