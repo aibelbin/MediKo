@@ -27,25 +27,6 @@ except ConfigError as exc:
     st.error(str(exc))
     st.stop()
 
-with st.sidebar:
-    st.header("This build")
-    st.markdown("**Included**")
-    st.write("PDF and UTF-8 TXT upload")
-    st.write("Embedded PDF text")
-    st.write("PaddleOCR fallback for pages with little embedded text")
-    st.markdown("**Not implemented**")
-    st.write("Normalization")
-    st.write("Medical NER")
-    st.write("Negation and uncertainty")
-    st.write("Relations")
-    st.write("Timeline")
-    st.divider()
-    st.caption(
-        f"OCR language `{settings.ocr_lang}` on `{settings.ocr_device}`. "
-        f"A PDF page with fewer than {settings.min_embedded_chars} embedded "
-        "characters is sent to PaddleOCR."
-    )
-
 
 @st.cache_resource
 def _engine(lang: str, device: str) -> PaddleOcrEngine:
