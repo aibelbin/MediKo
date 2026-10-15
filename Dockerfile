@@ -33,7 +33,8 @@ COPY config ./config
 COPY .streamlit ./.streamlit
 COPY docker/entrypoint.sh /entrypoint.sh
 
-RUN chmod 755 /entrypoint.sh \
+RUN sed -i "s/\r$//" /entrypoint.sh \
+    && chmod 755 /entrypoint.sh \
     && mkdir -p /home/mediko/.paddlex \
     && chown -R mediko:mediko /app /home/mediko
 

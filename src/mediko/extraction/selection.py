@@ -1,4 +1,4 @@
-"""Choose which PDF pages lack enough embedded text to skip OCR."""
+"""Choose which PDF pages lack enough embedded text to skip OC."""
 
 from __future__ import annotations
 
