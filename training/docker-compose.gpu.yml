@@ -1,0 +1,8 @@
+# NVIDIA GPU: docker compose -f docker-compose.yml -f docker-compose.gpu.yml run --rm train
+services:
+  train:
+    build:
+      args:
+        TORCH_INDEX: https://download.pytorch.org/whl/cu126
+    image: mediko-train:gpu
+    gpus: all

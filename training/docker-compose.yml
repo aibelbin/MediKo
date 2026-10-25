@@ -1,0 +1,14 @@
+services:
+  train:
+    build: .
+    image: mediko-train:local
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - hf-cache:/app/.hf_cache
+    environment:
+      OMP_NUM_THREADS: ${OMP_NUM_THREADS:-6}
+    command: ["--epochs", "3", "--batch-size", "8", "--grad-accum", "2"]
+
+volumes:
+  hf-cache:

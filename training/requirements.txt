@@ -1,0 +1,8 @@
+torch==2.14.1
+transformers==5.19.0
+datasets==5.1.0
+accelerate==1.15.0
+scikit-learn==1.9.1
+seqeval==1.2.2
+requests==2.34.2
+matplotlib==3.10.8
