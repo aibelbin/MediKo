@@ -1,6 +1,8 @@
 #!/bin/sh
-# Train in Docker. Uses the NVIDIA GPU when Docker has the nvidia runtime, otherwise CPU.
+# Train BERT, BioBERT and BiomedBERT in Docker, then compare them.
+# Uses the NVIDIA GPU when Docker has the nvidia runtime, otherwise CPU.
 # Usage:  ./run.sh [--epochs 4] [--limit 800] ...   (arguments go to src/train.py)
+#         MODELS="bert biobert" ./run.sh            (train only some models)
 set -eu
 cd "$(dirname "$0")"
 
@@ -15,7 +17,7 @@ case "$runtimes" in
     echo ">> NVIDIA runtime found: training on the GPU"
     files="$files -f docker-compose.gpu.yml" ;;
   *)
-    echo ">> No NVIDIA runtime: training on the CPU (slow, about an hour for 3 epochs)" ;;
+    echo ">> No NVIDIA runtime: training on the CPU (slow, about an hour per model for 3 epochs)" ;;
 esac
 
 # shellcheck disable=SC2086

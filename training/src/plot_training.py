@@ -1,5 +1,10 @@
-"""Plot training loss and validation F1 from outputs/metrics/log_history.json."""
+"""Plot training loss and validation F1 from <metrics_dir>/log_history.json.
 
+Usage:
+    python src/plot_training.py outputs/biomedbert/metrics
+"""
+
+import argparse
 import json
 from pathlib import Path
 
@@ -8,11 +13,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-METRICS_DIR = Path(__file__).resolve().parent.parent / "outputs" / "metrics"
-
 
 def main() -> None:
-    history = json.loads((METRICS_DIR / "log_history.json").read_text())
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("metrics_dir", type=Path)
+    metrics_dir = parser.parse_args().metrics_dir
+
+    history = json.loads((metrics_dir / "log_history.json").read_text())
     train = [(e["step"], e["loss"]) for e in history if "loss" in e]
     evals = [(e["step"], e["eval_f1"]) for e in history if "eval_f1" in e]
 
@@ -23,7 +30,7 @@ def main() -> None:
     ax_f1.set(title="Validation entity F1", xlabel="step", ylabel="F1")
     fig.tight_layout()
 
-    out = METRICS_DIR / "training_curves.png"
+    out = metrics_dir / "training_curves.png"
     fig.savefig(out, dpi=150)
     print(f"Saved {out}")
 

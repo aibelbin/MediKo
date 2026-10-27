@@ -8,6 +8,8 @@ services:
       - hf-cache:/app/.hf_cache
     environment:
       OMP_NUM_THREADS: ${OMP_NUM_THREADS:-6}
+      # Space-separated subset of: bert biobert biomedbert. Empty means all three.
+      MODELS: ${MODELS:-}
     command: ["--epochs", "3", "--batch-size", "8", "--grad-accum", "2"]
 
 volumes:

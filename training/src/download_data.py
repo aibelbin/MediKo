@@ -1,9 +1,10 @@
-"""Download the NCBI Disease corpus (CoNLL TSV) and the BiomedBERT model.
+"""Download the NCBI Disease corpus (CoNLL TSV) and the base models (see models.py).
 
 Usage:
-    python src/download_data.py               # dataset + model
-    python src/download_data.py --skip-model  # dataset only
-    python src/download_data.py --skip-data   # model only
+    python src/download_data.py                        # dataset + all models
+    python src/download_data.py --models bert biobert  # dataset + these models
+    python src/download_data.py --skip-model           # dataset only
+    python src/download_data.py --skip-data            # models only
 """
 
 import argparse
@@ -13,13 +14,14 @@ import urllib.request
 from collections import Counter
 from pathlib import Path
 
+from models import MODELS, load_tokenizer
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "ncbi_disease"
 
 BASE_URL = "https://raw.githubusercontent.com/spyysalo/ncbi-disease/master/conll"
 SPLITS = ["train", "devel", "test"]
 
-MODEL_ID = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"
 LABELS = ["O", "B-Disease", "I-Disease"]
 
 
@@ -83,21 +85,22 @@ def download_dataset(force: bool) -> None:
         print(f"  {dest.name}: {sents} sentences, {toks} tokens ({tag_str})")
 
 
-def download_model() -> None:
+def download_model(key: str) -> None:
     try:
-        from transformers import AutoModelForTokenClassification, AutoTokenizer
+        from transformers import AutoModelForTokenClassification
     except ImportError:
         sys.exit("transformers is not installed. Run: pip install -r requirements.txt")
 
-    print(f"Model -> {MODEL_ID} (cached in the Hugging Face cache, ~440 MB)")
+    model_id = MODELS[key]["id"]
+    print(f"Model {key} -> {model_id} (cached in the Hugging Face cache, ~440 MB)")
     id2label = dict(enumerate(LABELS))
     label2id = {label: i for i, label in id2label.items()}
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    tokenizer = load_tokenizer(key)
     # The token-classification head is newly initialised; the warning about
     # "newly initialized weights" is expected -- fine-tuning trains that head.
     model = AutoModelForTokenClassification.from_pretrained(
-        MODEL_ID, num_labels=len(LABELS), id2label=id2label, label2id=label2id
+        model_id, num_labels=len(LABELS), id2label=id2label, label2id=label2id
     )
 
     # Quick check that tokenizer + model work together.
@@ -112,14 +115,17 @@ def download_model() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--skip-data", action="store_true", help="do not download the dataset")
-    parser.add_argument("--skip-model", action="store_true", help="do not download the model")
+    parser.add_argument("--skip-model", action="store_true", help="do not download the models")
+    parser.add_argument("--models", nargs="+", choices=list(MODELS), default=list(MODELS),
+                        help="models to download (default: all)")
     parser.add_argument("--force", action="store_true", help="re-download dataset files")
     args = parser.parse_args()
 
     if not args.skip_data:
         download_dataset(args.force)
     if not args.skip_model:
-        download_model()
+        for key in args.models:
+            download_model(key)
     print("Done.")
 
 

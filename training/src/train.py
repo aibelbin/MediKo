@@ -1,7 +1,7 @@
-"""Fine-tune BiomedBERT for disease NER on the NCBI Disease corpus.
+"""Fine-tune one base model (see models.py) for disease NER on the NCBI Disease corpus.
 
 Trains on `train`, selects the best epoch by validation entity-level F1, then
-evaluates once on `test`. Writes the model, tokenizer and metrics to outputs/.
+evaluates once on `test`. Writes the model, tokenizer and metrics to outputs/<model>/.
 """
 
 import argparse
@@ -14,16 +14,15 @@ import torch
 from seqeval.metrics import classification_report, f1_score, precision_score, recall_score
 from transformers import (
     AutoModelForTokenClassification,
-    AutoTokenizer,
     DataCollatorForTokenClassification,
     Trainer,
     TrainingArguments,
     set_seed,
 )
 
+from models import DEFAULT_MODEL, MODELS, load_tokenizer
 from prepare_data import ID2LABEL, IGNORE_INDEX, LABEL2ID, LABELS, load_splits, tokenize_and_align
 
-MODEL_ID = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "outputs"
 
 
@@ -48,6 +47,7 @@ def compute_metrics(eval_pred):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", choices=list(MODELS), default=DEFAULT_MODEL, help="base model to fine-tune")
     parser.add_argument("--epochs", type=float, default=3)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--grad-accum", type=int, default=1, help="gradient accumulation steps")
@@ -57,14 +57,17 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-steps", type=int, default=-1, help="cap steps (for a quick smoke test)")
     parser.add_argument("--limit", type=int, default=0, help="use only N examples per split (smoke test)")
-    parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--output-dir", type=Path, help="default: outputs/<model>")
     args = parser.parse_args()
+    args.output_dir = args.output_dir or OUTPUT_DIR / args.model
+    model_id = MODELS[args.model]["id"]
 
     set_seed(args.seed)
     torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", os.cpu_count() or 1)))
     print(f"torch {torch.__version__}, threads={torch.get_num_threads()}, cuda={torch.cuda.is_available()}")
+    print(f"model: {args.model} ({model_id})")
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    tokenizer = load_tokenizer(args.model)
     raw = load_splits()
     if args.limit:
         for split in raw:
@@ -82,7 +85,7 @@ def main() -> None:
     )
 
     model = AutoModelForTokenClassification.from_pretrained(
-        MODEL_ID, num_labels=len(LABELS), id2label=ID2LABEL, label2id=LABEL2ID
+        model_id, num_labels=len(LABELS), id2label=ID2LABEL, label2id=LABEL2ID
     )
 
     checkpoints = args.output_dir / "checkpoints"
@@ -139,7 +142,7 @@ def main() -> None:
     (metrics_dir / "test.json").write_text(json.dumps(test_out.metrics, indent=2))
     (metrics_dir / "test_classification_report.txt").write_text(report)
     (metrics_dir / "train_config.json").write_text(
-        json.dumps({**vars(args), "output_dir": str(args.output_dir), "model_id": MODEL_ID}, indent=2)
+        json.dumps({**vars(args), "output_dir": str(args.output_dir), "model_id": model_id}, indent=2)
     )
     (metrics_dir / "log_history.json").write_text(json.dumps(trainer.state.log_history, indent=2))
 

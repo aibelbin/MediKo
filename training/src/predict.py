@@ -4,6 +4,7 @@ Research prototype only -- predictions are not clinical facts.
 
 Usage:
     python src/predict.py "Patients with breast cancer often carry BRCA1 mutations."
+    python src/predict.py --model biobert "..."   # a different trained model
     echo "some text" | python src/predict.py
 """
 
@@ -14,10 +15,12 @@ from pathlib import Path
 
 from transformers import pipeline
 
-MODEL_DIR = Path(__file__).resolve().parent.parent / "outputs" / "final_model"
+from models import DEFAULT_MODEL, MODELS
+
+OUTPUT_DIR = Path(__file__).resolve().parent.parent / "outputs"
 
 
-def load_predictor(model_dir: Path = MODEL_DIR):
+def load_predictor(model_dir: Path):
     # "first" matches training: each word takes the label of its first subword.
     return pipeline("token-classification", model=str(model_dir), aggregation_strategy="first")
 
@@ -39,11 +42,13 @@ def predict(text: str, predictor) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("text", nargs="?", help="text to analyse (reads stdin if omitted)")
-    parser.add_argument("--model-dir", type=Path, default=MODEL_DIR)
+    parser.add_argument("--model", choices=list(MODELS), default=DEFAULT_MODEL)
+    parser.add_argument("--model-dir", type=Path, help="default: outputs/<model>/final_model")
     args = parser.parse_args()
 
+    model_dir = args.model_dir or OUTPUT_DIR / args.model / "final_model"
     text = args.text if args.text is not None else sys.stdin.read()
-    print(json.dumps(predict(text, load_predictor(args.model_dir)), indent=2))
+    print(json.dumps(predict(text, load_predictor(model_dir)), indent=2))
 
 
 if __name__ == "__main__":

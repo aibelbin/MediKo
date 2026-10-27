@@ -1,5 +1,7 @@
-# Train in Docker. Uses the NVIDIA GPU when Docker has the nvidia runtime, otherwise CPU.
+# Train BERT, BioBERT and BiomedBERT in Docker, then compare them.
+# Uses the NVIDIA GPU when Docker has the nvidia runtime, otherwise CPU.
 # Usage:  .\run.ps1 [--epochs 4] [--limit 800] ...   (arguments go to src/train.py)
+#         $env:MODELS = "bert biobert"; .\run.ps1   (train only some models)
 Set-Location $PSScriptRoot
 
 $runtimes = docker info --format "{{json .Runtimes}}" 2>$null
@@ -13,7 +15,7 @@ if ($runtimes -match "nvidia") {
     Write-Host ">> NVIDIA runtime found: training on the GPU"
     $files += @("-f", "docker-compose.gpu.yml")
 } else {
-    Write-Host ">> No NVIDIA runtime: training on the CPU (slow, about an hour for 3 epochs)"
+    Write-Host ">> No NVIDIA runtime: training on the CPU (slow, about an hour per model for 3 epochs)"
 }
 
 docker compose @files build
